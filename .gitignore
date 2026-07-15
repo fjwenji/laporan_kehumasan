@@ -1,13 +1,4 @@
-# ============================================================
-# MAYZ DJPB - .GITIGNORE
-# ============================================================
-# File ini sudah DIKONFIGURASI untuk melindungi data sensitif
-# File ini SUDAH AMAN untuk push ke GitHub
 
-# ============================================================
-# ENVIRONMENT / SECRETS - CRITICAL
-# ============================================================
-# JANGAN HAPUS INI! File ini melindungi .env dari push
 .env
 .env.local
 .env.production
@@ -19,35 +10,23 @@ deployment/docker-local/.env.docker.local
 deployment/docker-local/.env.local
 deployment/docker-local/.env.production
 
-# ============================================================
-# INSTAGRAM SESSION / COOKIES
-# ============================================================
-# Session Instagram bisa mengandung credentials
 data/instagram/
 **/auth_state.json
 **/storage_state.json
 **/*.session
 
-# ============================================================
-# STAGING / SCRAPING OUTPUT
-# ============================================================
+
 # Data hasil scraping tidak perlu di-commit
 data/
 !data/.gitkeep
 
-# ============================================================
-# LOGS
-# ============================================================
+
 logs/
 *.log
 debug_*.html
 debug_*.png
 debug_*.json
 debug_logs/
-
-# ============================================================
-# PYTHON
-# ============================================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -59,10 +38,6 @@ env/
 *.egg-info/
 dist/
 build/
-
-# ============================================================
-# NODE / FRONTEND
-# ============================================================
 node_modules/
 frontend/node_modules/
 dist/
@@ -72,9 +47,6 @@ frontend/build/
 .vite/
 *.tsbuildinfo
 
-# ============================================================
-# OS / EDITOR
-# ============================================================
 .DS_Store
 Thumbs.db
 .vscode/settings.json
@@ -83,18 +55,13 @@ Thumbs.db
 *.swo
 *~
 
-# ============================================================
-# DOCKER / DATABASE
-# ============================================================
 mysql_data/
 mariadb_data/
 docker_data/
 *.sql.gz
 *.dump
 
-# ============================================================
-# BACKUP / ARCHIVES
-# ============================================================
+
 *.zip
 *.rar
 *.7z
@@ -102,16 +69,11 @@ docker_data/
 *.tar.gz
 *.gz
 
-# ============================================================
-# PLAYWRIGHT / TESTING
-# ============================================================
 playwright-report/
 test-results/
 allure-results/
 
-# ============================================================
 # TEMP / CACHE
-# ============================================================
 temp/
 tmp/
 .cache/
