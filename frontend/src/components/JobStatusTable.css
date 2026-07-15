@@ -1,0 +1,106 @@
+.jobs-table-container {
+  overflow-x: auto;
+}
+
+.jobs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.jobs-table th,
+.jobs-table td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.jobs-table th {
+  background: var(--color-surface);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.jobs-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.jobs-table tbody tr:hover {
+  background: var(--color-soft-blue);
+}
+
+.jobs-table tbody tr.row-running {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.jobs-table tbody tr.row-running:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.job-id code {
+  font-family: monospace;
+  font-size: 0.75rem;
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.job-time {
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.jobs-empty,
+.jobs-loading {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.skeleton-row {
+  height: 40px;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light) 25%,
+    var(--color-surface) 50%,
+    var(--color-border-light) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.badge-running {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+}
+
+.badge-info {
+  background: rgba(16, 42, 67, 0.1);
+  color: var(--color-navy);
+}
+
+.badge-success {
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--color-success);
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.badge-danger {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--color-danger);
+}

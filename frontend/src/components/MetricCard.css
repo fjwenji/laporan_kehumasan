@@ -1,0 +1,187 @@
+.metric-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-sm);
+}
+
+.metric-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.metric-card-loading {
+  min-height: 100px;
+}
+
+.metric-card-gold .metric-icon {
+  background: var(--accent-soft);
+}
+
+.metric-card-gold .metric-icon svg {
+  color: var(--accent);
+}
+
+.metric-card-gold .metric-value {
+  color: var(--accent);
+}
+
+.metric-card-success .metric-icon {
+  background: var(--success-soft);
+}
+
+.metric-card-success .metric-icon svg {
+  color: var(--success);
+}
+
+.metric-card-success .metric-value {
+  color: var(--success);
+}
+
+.metric-card-warning .metric-icon {
+  background: var(--accent-soft);
+}
+
+.metric-card-warning .metric-icon svg {
+  color: var(--accent);
+}
+
+.metric-card-warning .metric-value {
+  color: var(--accent);
+}
+
+.metric-card-danger .metric-icon {
+  background: var(--danger-soft);
+}
+
+.metric-card-danger .metric-icon svg {
+  color: var(--danger);
+}
+
+.metric-card-danger .metric-value {
+  color: var(--danger);
+}
+
+.metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-icon svg {
+  width: 24px;
+  height: 24px;
+  color: var(--primary);
+}
+
+.metric-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.metric-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.metric-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.metric-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.metric-trend.positive {
+  color: var(--success);
+  background: var(--success-soft);
+}
+
+.metric-trend.negative {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.metric-trend svg {
+  width: 14px;
+  height: 14px;
+}
+
+.metric-trend svg.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--border) 50%,
+    var(--surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-text {
+  height: 24px;
+  border-radius: var(--radius-sm);
+  width: 60%;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (max-width: 768px) {
+  .metric-card {
+    padding: 16px;
+  }
+
+  .metric-value {
+    font-size: 24px;
+  }
+
+  .metric-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .metric-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+}

@@ -1,0 +1,116 @@
+.failed-table-container {
+  overflow-x: auto;
+}
+
+.failed-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.failed-table th,
+.failed-table td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.failed-table th {
+  background: var(--color-surface);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.failed-table tbody tr:hover {
+  background: rgba(220, 38, 38, 0.03);
+}
+
+.job-id-cell code {
+  font-family: monospace;
+  font-size: 0.7rem;
+  background: var(--color-surface);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.url-cell .external-link {
+  color: var(--color-navy);
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.url-cell .external-link:hover {
+  text-decoration: underline;
+}
+
+.error-type {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.error-type.login_wall,
+.error-type.rate_limited {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.error-type.page_load_failed,
+.error-type.network_error {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--color-danger);
+}
+
+.error-type.unknown {
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.reason-cell {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+}
+
+.time-cell {
+  white-space: nowrap;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.failed-empty,
+.failed-loading {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.skeleton-row {
+  height: 40px;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light) 25%,
+    var(--color-surface) 50%,
+    var(--color-border-light) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}

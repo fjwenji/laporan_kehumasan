@@ -1,0 +1,159 @@
+# ============================================================
+# MAYZ DJPB - .GITIGNORE
+# ============================================================
+# File ini sudah DIKONFIGURASI untuk melindungi data sensitif
+# File ini SUDAH AMAN untuk push ke GitHub
+
+# ============================================================
+# ENVIRONMENT / SECRETS - CRITICAL
+# ============================================================
+# JANGAN HAPUS INI! File ini melindungi .env dari push
+.env
+.env.local
+.env.production
+.env.*.local
+!.env.example
+
+# Deployment configs (jika ada secrets nyata)
+deployment/docker-local/.env.docker.local
+deployment/docker-local/.env.local
+deployment/docker-local/.env.production
+
+# ============================================================
+# INSTAGRAM SESSION / COOKIES
+# ============================================================
+# Session Instagram bisa mengandung credentials
+data/instagram/
+**/auth_state.json
+**/storage_state.json
+**/*.session
+
+# ============================================================
+# STAGING / SCRAPING OUTPUT
+# ============================================================
+# Data hasil scraping tidak perlu di-commit
+data/
+!data/.gitkeep
+
+# ============================================================
+# LOGS
+# ============================================================
+logs/
+*.log
+debug_*.html
+debug_*.png
+debug_*.json
+debug_logs/
+
+# ============================================================
+# PYTHON
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# ============================================================
+# NODE / FRONTEND
+# ============================================================
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+build/
+frontend/build/
+.vite/
+*.tsbuildinfo
+
+# ============================================================
+# OS / EDITOR
+# ============================================================
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ============================================================
+# DOCKER / DATABASE
+# ============================================================
+mysql_data/
+mariadb_data/
+docker_data/
+*.sql.gz
+*.dump
+
+# ============================================================
+# BACKUP / ARCHIVES
+# ============================================================
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.gz
+
+# ============================================================
+# PLAYWRIGHT / TESTING
+# ============================================================
+playwright-report/
+test-results/
+allure-results/
+
+# ============================================================
+# TEMP / CACHE
+# ============================================================
+temp/
+tmp/
+.cache/
+*.tmp
+
+# Generated exports
+exports/
+*.xlsx
+*.xls
+*.csv
+
+# Runtime data
+data/
+logs/
+debug_logs/
+
+# Secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+deployment/docker-local/.env.docker.local
+deployment/docker-local/.env.local
+
+# Instagram session
+data/instagram/
+**/auth_state.json
+**/storage_state.json
+
+# Build/cache
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+build/
+frontend/build/
+__pycache__/
+*.pyc
+.pytest_cache/
+.vite/
+
+# Archives
+*.zip
+*.rar
+*.7z

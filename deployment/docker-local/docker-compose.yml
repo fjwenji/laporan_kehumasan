@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ../..
+      dockerfile: deployment/docker-local/Dockerfile.backend
+    container_name: mayz-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.docker.local
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data/staging:/app/data/staging
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../..
+      dockerfile: deployment/docker-local/Dockerfile.frontend
+    container_name: mayz-frontend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: deployment/docker-local/Dockerfile.worker
+    container_name: mayz-worker
+    env_file:
+      - .env.docker.local
+    volumes:
+      - ../../logs:/app/logs
+      - ../../data/staging:/app/data/staging
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    depends_on:
+      - backend
