@@ -18,10 +18,11 @@ from src.db_repository import (
     get_eligible_accounts_for_rolling_sync,
     normalize_media_type,
     upsert_post,
+    update_accounts_profile_metrics_bulk,
 )
 from src.notification_service import get_telegram_enabled, notify_new_post
 from src.parser import AccountRow
-from src.scraper import run_scraping
+from src.scraper import run_scraping, _profile_metrics_cache
 
 ROOT_DIR = Path(__file__).parent.parent
 LOG_DIR = ROOT_DIR / "logs"
@@ -364,6 +365,12 @@ def save_scraping_results(job_id: str, accounts: list[dict], rows: list, mode: s
             new_posts.append(post_payload(row, post_id, username, unit))
 
     send_new_post_notifications(new_posts)
+
+    # Update profile metrics (followers, following, posts count)
+    profile_metrics_result = update_accounts_profile_metrics_bulk(_profile_metrics_cache)
+    if profile_metrics_result["updated"] > 0:
+        _log(f"[PROFILE] Updated metrics for {profile_metrics_result['updated']} accounts")
+
     return stats
 
 

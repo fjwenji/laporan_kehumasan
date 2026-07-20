@@ -1,6 +1,6 @@
 # Current Progress - Mayz Monitoring
 
-> Last Updated: 2026-07-12 20:00
+> Last Updated: 2026-07-15
 
 ## Status Overview
 
@@ -12,6 +12,23 @@
 | Worker Loop | ✅ Idle | No job, sleeping |
 | Docker Stack | ✅ Complete | backend + frontend + worker |
 | Playwright | ✅ Installed | Chromium in worker image |
+
+## New Features Added (2026-07-15)
+
+### Profile Metrics Extraction
+- [x] `extract_profile_metrics()` function in scraper.py
+- [x] Extracts followers, following, posts count from profile page
+- [x] Uses og:description, header section, and script JSON
+- [x] Updates accounts table with profile metrics after scraping
+- [x] `update_account_profile_metrics()` in db_repository.py
+- [x] `update_accounts_profile_metrics_bulk()` for batch updates
+
+### Database Schema Updates (via migrate.py)
+- [x] `followers_count` - stored in accounts table
+- [x] `following_count` - stored in accounts table
+- [x] `profile_posts_count` - stored in accounts table
+- [x] `profile_last_scraped_at` - timestamp of last metrics scrape
+- [x] `profile_metric_status` - status of metrics extraction
 
 ## Docker Local Demo Completed
 
@@ -151,6 +168,34 @@
 | `src/scraper.py` | Browser lifecycle logs, per-account logging | 2026-07-09 |
 | `deployment/docker-local/Dockerfile.backend` | PYTHONPATH fix | 2026-07-12 |
 | `deployment/docker-local/.env.docker.local` | mayz_docker user | 2026-07-12 |
+| `src/scraper.py` | Profile metrics extraction (followers/following/posts) | 2026-07-15 |
+| `src/db_repository.py` | `update_account_profile_metrics()` added | 2026-07-15 |
+| `worker/main.py` | Profile metrics bulk update integration | 2026-07-15 |
+| `mayz_sync.bat` | Enhanced worker batch script with logging | 2026-07-15 |
+
+## Deployment Documentation
+
+### For DJPb Server Deployment
+- **Windows Server**: See `docs/DEPLOYMENT_DJPB_SERVER.md`
+- **Linux Server**: See `docs/LINUX_CRONTAB_SETUP.md`
+
+### Quick Setup Checklist (Windows)
+```powershell
+# 1. Copy project to server
+# 2. Buat virtual environment
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\pip install -r backend\requirements.txt
+.venv\Scripts\playwright install chromium
+
+# 3. Setup .env file
+# 4. Run database migration
+.venv\Scripts\python backend\migrate.py
+
+# 5. Setup Task Scheduler
+schtasks /create /tn "Mayz_Worker" /tr "D:\path\to\mayz_sync.bat" /sc DAILY /st 06:00 /f
+schtasks /create /tn "Mayz_Worker_PM" /tr "D:\path\to\mayz_sync.bat" /sc DAILY /st 22:00 /f
+```
 
 ## Files NOT Modified (Per PRD)
 

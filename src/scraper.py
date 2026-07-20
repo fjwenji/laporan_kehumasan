@@ -41,6 +41,7 @@ from src.db_repository import parse_view_count_from_html
 # Module-level state
 _last_scrape_stats = {}
 _reels_views_cache = {}
+_profile_metrics_cache = {}  # Cache profile metrics per account URL
 
 DEFAULT_MAX_POSTS = 30
 MIN_DELAY = 2.0
@@ -745,6 +746,262 @@ def count_media_links(page: Page) -> dict:
         result["reel"] = reel_count
         result["tv"] = tv_count
         result["total"] = p_count + reel_count + tv_count
+    except Exception:
+        pass
+
+    return result
+
+
+def parse_indonesian_number(text: str) -> Optional[int]:
+    """
+    Parse Indonesian number format to integer.
+
+    Format yang didukung:
+    - "12.5rb" -> 12500
+    - "1.2jt" atau "1.2 juta" -> 1200000
+    - "123" -> 123
+    - "12.345" -> 12345 (thousand separator)
+    """
+    if not text:
+        return None
+
+    original = str(text).strip().lower()
+    original = re.sub(r'\s+', ' ', original)
+
+    # Check for suffix first
+    multiplier = 1
+    has_juta = any(s in original for s in ['jt', 'juta', 'million', 'jutaan'])
+    has_ribu = any(s in original for s in ['rb', 'ribu', 'k', 'thousand'])
+
+    if has_juta:
+        multiplier = 1_000_000
+        original = re.sub(r'\bjt\b|\bjuta\b|\bmillion\b|\bjutaan\b', '', original).strip()
+    elif has_ribu:
+        multiplier = 1_000
+        original = re.sub(r'\brb\b|\bribu\b|\bk\b|\bthousand\b', '', original).strip()
+
+    # Handle decimal comma format like "1,5 rb" or "1,2 jt"
+    decimal_comma_match = re.match(r'^(\d+),(\d+)(.*)$', original)
+    if decimal_comma_match:
+        whole_part = decimal_comma_match.group(1)
+        decimal_part = decimal_comma_match.group(2)
+        remainder = decimal_comma_match.group(3).strip()
+
+        if 'jt' in remainder or 'juta' in remainder:
+            multiplier = 1_000_000
+        elif 'rb' in remainder or 'ribu' in remainder:
+            multiplier = 1_000
+
+        try:
+            value = float(f"{whole_part}.{decimal_part}")
+            return int(value * multiplier)
+        except (ValueError, TypeError):
+            pass
+
+    # Remove dots (thousand separators)
+    cleaned = original.replace('.', '')
+
+    # Handle comma as decimal point
+    if ',' in cleaned:
+        parts = cleaned.split(',')
+        if len(parts) == 2 and len(parts[1]) <= 2:
+            try:
+                cleaned = parts[0] + '.' + parts[1]
+            except Exception:
+                pass
+
+    # Extract digits only
+    digits = re.findall(r'\d+', cleaned)
+    if not digits:
+        return None
+
+    num_str = ''.join(digits)
+
+    try:
+        result = int(num_str) * multiplier
+        if result > 0 and result < 1_000_000_000:
+            return result
+        return None
+    except (ValueError, TypeError):
+        return None
+
+
+def extract_profile_metrics(page: Page) -> dict:
+    """
+    Extract profile metrics: followers, following, posts count.
+
+    Sources:
+    1. og:description meta tag (paling reliable)
+    2. Header section dari profile page
+    3. Script JSON data
+
+    Returns dict dengan keys:
+    - followers_count: int or None
+    - following_count: int or None
+    - posts_count: int or None
+    - source: str (sumber extraction)
+    """
+    result = {
+        "followers_count": None,
+        "following_count": None,
+        "posts_count": None,
+        "source": "none"
+    }
+
+    if not page_is_alive(page):
+        return result
+
+    # Method 1: og:description meta tag
+    # Format: "12.5rb pengikut, 432 mengikuti, 150 postingan"
+    try:
+        og_desc = page.locator('meta[property="og:description"]')
+        if og_desc.count() > 0:
+            content = og_desc.first.get_attribute("content") or ""
+
+            if content:
+                # Try to extract followers
+                followers_patterns = [
+                    r'([\d.,]+(?:rb|jt|k|m)?)\s*(?:pengikut|followers)',
+                    r'([\d.,]+(?:rb|jt|k|m)?)\s*(?:pengikut)',
+                    r'([\d.,]+)\s*(?:followers)',
+                ]
+                for pattern in followers_patterns:
+                    match = re.search(pattern, content.lower())
+                    if match:
+                        result["followers_count"] = parse_indonesian_number(match.group(1))
+                        if result["followers_count"]:
+                            result["source"] = "og_description"
+                            break
+
+                # Try to extract following
+                following_patterns = [
+                    r'([\d.,]+(?:rb|jt|k|m)?)\s*(?:mengikuti|following)',
+                    r'([\d.,]+)\s*(?:following)',
+                ]
+                for pattern in following_patterns:
+                    match = re.search(pattern, content.lower())
+                    if match:
+                        result["following_count"] = parse_indonesian_number(match.group(1))
+                        if result["following_count"] and result["source"] == "none":
+                            result["source"] = "og_description"
+                        break
+
+                # Try to extract posts count
+                posts_patterns = [
+                    r'([\d.,]+)\s*(?:postingan|posts)',
+                    r'([\d.,]+)\s*(?:posts)',
+                ]
+                for pattern in posts_patterns:
+                    match = re.search(pattern, content.lower())
+                    if match:
+                        result["posts_count"] = parse_indonesian_number(match.group(1))
+                        if result["posts_count"] and result["source"] == "none":
+                            result["source"] = "og_description"
+                        break
+
+                if result["followers_count"] or result["following_count"]:
+                    return result
+    except Exception:
+        pass
+
+    # Method 2: Header section dengan numbers
+    try:
+        header_metrics = page.evaluate(r"""
+            () => {
+                // Cari span dengan angka besar (follower/following/posts)
+                const spans = document.querySelectorAll('span[dir="auto"]');
+                let result = { followers: null, following: null, posts: null };
+
+                for (const span of spans) {
+                    const text = span.innerText || '';
+                    const lower = text.toLowerCase();
+
+                    // Check if this is a number with context
+                    const numberMatch = text.match(/^([\d.,]+[KMRB]?)\s*(?:pengikut|followers|mengikuti|following|postingan|posts)?$/i);
+                    if (numberMatch) {
+                        const num = numberMatch[1];
+
+                        if (lower.includes('pengikut') || lower.includes('followers')) {
+                            result.followers = num;
+                        } else if (lower.includes('mengikuti') || lower.includes('following')) {
+                            result.following = num;
+                        } else if (lower.includes('postingan') || lower.includes('posts')) {
+                            result.posts = num;
+                        }
+                    }
+                }
+
+                // Alternative: cari di ul/li dengan format yang sama
+                const lists = document.querySelectorAll('ul li');
+                for (const li of lists) {
+                    const text = li.innerText || '';
+                    const lower = text.toLowerCase();
+
+                    if (lower.includes('pengikut')) {
+                        const num = text.match(/([\d.,]+[KMRB]?)/);
+                        if (num) result.followers = num[1];
+                    } else if (lower.includes('mengikuti')) {
+                        const num = text.match(/([\d.,]+[KMRB]?)/);
+                        if (num) result.following = num[1];
+                    } else if (lower.includes('postingan') || lower.includes('posts')) {
+                        const num = text.match(/([\d.,]+[KMRB]?)/);
+                        if (num) result.posts = num[1];
+                    }
+                }
+
+                return result;
+            }
+        """)
+
+        if header_metrics:
+            if header_metrics.get("followers"):
+                result["followers_count"] = parse_indonesian_number(header_metrics["followers"])
+            if header_metrics.get("following"):
+                result["following_count"] = parse_indonesian_number(header_metrics["following"])
+            if header_metrics.get("posts"):
+                result["posts_count"] = parse_indonesian_number(header_metrics["posts"])
+
+            if result["followers_count"] or result["following_count"]:
+                result["source"] = "header_section"
+                return result
+    except Exception:
+        pass
+
+    # Method 3: Script JSON data
+    try:
+        script_data = page.evaluate(r"""
+            () => {
+                const scripts = document.querySelectorAll('script:not([src])');
+                for (const script of scripts) {
+                    const text = script.textContent || '';
+                    if (text.includes('followers_count') || text.includes('following_count')) {
+                        // Extract the relevant section
+                        const match = text.match(/followers_count["\']?:\s*(\d+)/);
+                        const followingMatch = text.match(/following_count["\']?:\s*(\d+)/);
+                        const postsMatch = text.match(/media_count["\']?:\s*(\d+)/);
+
+                        return {
+                            followers: match ? match[1] : null,
+                            following: followingMatch ? followingMatch[1] : null,
+                            posts: postsMatch ? postsMatch[1] : null
+                        };
+                    }
+                }
+                return null;
+            }
+        """)
+
+        if script_data:
+            if script_data.get("followers"):
+                result["followers_count"] = int(script_data["followers"])
+            if script_data.get("following"):
+                result["following_count"] = int(script_data["following"])
+            if script_data.get("posts"):
+                result["posts_count"] = int(script_data["posts"])
+
+            if result["followers_count"] or result["following_count"]:
+                result["source"] = "script_json"
+                return result
     except Exception:
         pass
 
@@ -1943,8 +2200,9 @@ def run_scraping(
         ensure_instagram_login(context)
 
         # Reset reels views cache at start of scraping
-        global _reels_views_cache
+        global _reels_views_cache, _profile_metrics_cache
         _reels_views_cache = {}
+        _profile_metrics_cache = {}
 
         try:
             print("\n" + "=" * 60)
@@ -2165,6 +2423,23 @@ def run_scraping(
                                     _reels_views_cache.update(reels_views)
                                 else:
                                     print("  [VIEWS] No view counts found in profile grid")
+
+                                # ================================================
+                                # EXTRACT PROFILE METRICS (Followers/Following/Posts)
+                                # ================================================
+                                profile_metrics = extract_profile_metrics(page)
+                                if profile_metrics["followers_count"] or profile_metrics["following_count"]:
+                                    followers = profile_metrics.get("followers_count")
+                                    following = profile_metrics.get("following_count")
+                                    posts_count = profile_metrics.get("posts_count")
+                                    source = profile_metrics.get("source", "unknown")
+
+                                    print(f"  [PROFILE] Followers: {followers or 'N/A'} | Following: {following or 'N/A'} | Posts: {posts_count or 'N/A'} (source: {source})")
+
+                                    # Store in module-level cache for worker
+                                    _profile_metrics_cache[account_url] = profile_metrics
+                                else:
+                                    print("  [PROFILE] No profile metrics found")
 
                                 # Handle scroll status
                                 if scroll_status == "login_wall":
@@ -2494,11 +2769,18 @@ def run_scraping(
                 "status": scrape_final_status,
                 "reels_views_collected": len(_reels_views_cache),
                 "reels_views_total_views": sum(v for v in _reels_views_cache.values() if v),
+                "profile_metrics": _profile_metrics_cache,  # Include profile metrics
             }
 
             # Print reels views summary
             if _reels_views_cache:
                 print(f"  Reels views collected: {len(_reels_views_cache)} ({_last_scrape_stats['reels_views_total_views']:,} total views)")
+
+            # Print profile metrics summary
+            if _profile_metrics_cache:
+                accounts_with_metrics = len(_profile_metrics_cache)
+                total_followers = sum(m.get("followers_count", 0) or 0 for m in _profile_metrics_cache.values())
+                print(f"  Profile metrics collected: {accounts_with_metrics} accounts ({total_followers:,} total followers)")
 
         finally:
             print("[PLAYWRIGHT] Browser closing...")

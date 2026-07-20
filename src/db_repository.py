@@ -1025,6 +1025,124 @@ def update_account_health(account_id: int, health: str, last_checked: datetime =
         return False
 
 
+def update_account_profile_metrics(
+    account_id: int,
+    followers_count: int = None,
+    following_count: int = None,
+    posts_count: int = None,
+) -> bool:
+    """
+    Update account profile metrics (followers, following, posts count).
+
+    This is called after scraping to update the account's profile metrics
+    stored in the accounts table.
+
+    Args:
+        account_id: The account ID to update
+        followers_count: Number of followers
+        following_count: Number of following
+        posts_count: Number of posts
+
+    Returns:
+        True if update successful, False otherwise
+    """
+    try:
+        with get_db_cursor() as cursor:
+            # Build dynamic update query based on provided values
+            updates = []
+            params = []
+
+            if followers_count is not None:
+                updates.append("followers_count = %s")
+                params.append(followers_count)
+
+            if following_count is not None:
+                updates.append("following_count = %s")
+                params.append(following_count)
+
+            if posts_count is not None:
+                updates.append("profile_posts_count = %s")
+                params.append(posts_count)
+
+            # Always update profile_last_scraped_at and profile_metric_status
+            updates.append("profile_last_scraped_at = NOW()")
+            updates.append("profile_metric_status = %s")
+            params.append("SUCCESS")
+
+            if not updates:
+                return False
+
+            updates.append("updated_at = NOW()")
+            params.append(account_id)
+
+            query = f"""
+                UPDATE accounts
+                SET {', '.join(updates)}
+                WHERE id = %s
+            """
+
+            cursor.execute(query, params)
+            return cursor.rowcount > 0
+    except Exception as e:
+        print(f"Error updating account profile metrics: {e}")
+        return False
+
+
+def update_accounts_profile_metrics_bulk(profile_metrics: dict) -> dict:
+    """
+    Bulk update account profile metrics from scraping results.
+
+    Args:
+        profile_metrics: Dict mapping account_url -> {
+            'followers_count': int,
+            'following_count': int,
+            'posts_count': int
+        }
+
+    Returns:
+        Dict with 'updated' and 'errors' counts
+    """
+    result = {"updated": 0, "errors": 0}
+
+    if not profile_metrics:
+        return result
+
+    for account_url, metrics in profile_metrics.items():
+        try:
+            # Find account by profile_url
+            account = None
+            with get_db_cursor(commit=False) as cursor:
+                cursor.execute(
+                    "SELECT id FROM accounts WHERE profile_url = %s OR url_akun = %s",
+                    (account_url, account_url)
+                )
+                row = cursor.fetchone()
+                if row:
+                    account = row
+
+            if not account:
+                print(f"[WARN] Account not found for URL: {account_url}")
+                continue
+
+            success = update_account_profile_metrics(
+                account_id=account["id"],
+                followers_count=metrics.get("followers_count"),
+                following_count=metrics.get("following_count"),
+                posts_count=metrics.get("posts_count"),
+            )
+
+            if success:
+                result["updated"] += 1
+            else:
+                result["errors"] += 1
+
+        except Exception as e:
+            print(f"[ERROR] Failed to update metrics for {account_url}: {e}")
+            result["errors"] += 1
+
+    return result
+
+
 def delete_account(account_id: int) -> Tuple[bool, str]:
     """Delete an account permanently from database."""
     try:
